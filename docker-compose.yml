@@ -1,7 +1,6 @@
-app:
+lavatar:
   # build: .
   image: rroemhild/lavatar
-  command: /env/bin/python /app/production.py
   links:
     - redis
     - openldap
@@ -9,9 +8,7 @@ app:
     - 5000:5000
   environment:
     - DEBUG=True
-    - APP_HOST=0.0.0.0
     - USE_REDIS=True
-    - LAVATAR_SETTINGS=/app/docker_settings.py
     - LDAP_SERVER=openldap
     - LDAP_BINDDN=cn=admin,dc=planetexpress,dc=com
     - LDAP_SECRET=GoodNewsEveryone
