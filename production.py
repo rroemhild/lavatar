@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from gevent import monkey; monkey.patch_all()
+import gevent
+import gevent.monkey
+from gevent.pywsgi import WSGIServer
+gevent.monkey.patch_all()
 
 import os
 
@@ -9,7 +12,6 @@ if 'LAVATAR_SETTINGS' not in os.environ:
     config = 'settings.py'
     os.environ['LAVATAR_SETTINGS'] = os.path.abspath(config)
 
-from gevent.pywsgi import WSGIServer
 from lavatar import app
 
 
