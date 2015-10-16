@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 import atexit
+import hashlib
 import threading
 
-from md5 import md5
 from flask import Flask
 from flask_redis import Redis
 from flask_ldapconn import LDAPConn
@@ -28,24 +32,30 @@ class User(ldap_conn.Entry):
 
 # md5sum thread
 def update_md5db_thread():
-    app.logger.info('Update md5db.')
     search_filter = app.config.get('LDAP_USER_SEARCHFILTER', '')
 
     with app.app_context():
         users = User.query.filter(
             'mail: *, photo: *'
         ).filter(search_filter).all()
+
         for user in users:
             for mailaddr in user.mail:
-                md5sum = md5(mailaddr).hexdigest()
-                if not redis_store.get(md5sum):
+                mail_md5 = hashlib.md5(mailaddr).hexdigest()
+                if not redis_store.exists(mail_md5):
                     redis_store.setex(
-                        md5sum,
-                        mailaddr,
+                        mail_md5,
+                        user.dn,
+                        app.config['MD5DB_ENTRY_TTL']
+                    )
+                else:
+                    redis_store.expire(
+                        mail_md5,
                         app.config['MD5DB_ENTRY_TTL']
                     )
 
-        app.logger.debug('%s entries from LDAP.', len(users))
+        app.logger.info('MD5db updated with %s entries from LDAP.',
+                        len(users))
 
 
 # init db on startup

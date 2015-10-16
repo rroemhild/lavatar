@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import hashlib
 
 from StringIO import StringIO
 from flask import Blueprint, current_app, send_file, request, abort, url_for
@@ -11,24 +12,15 @@ from lavatar import redis_store, User
 mod = Blueprint('avatar', __name__, url_prefix='/avatar')
 
 
-def _get_image_from_redis(mail_addr):
-    return Image.open(StringIO(redis_store.get(mail_addr)))
+def _get_image_from_redis(dn_sha1hex, size='raw'):
+    image = redis_store.hget(dn_sha1hex, size)
+    return Image.open(StringIO(image))
 
 
-def _get_image_from_ldap(mail_addr):
-    img_ttl = current_app.config['AVATAR_TTL']
-    user_filter = 'mail: {}'.format(mail_addr)
-    search_filter = current_app.config.get('LDAP_USER_SEARCHFILTER', '')
-
+def _get_image_from_ldap(user_dn, dn_sha1hex):
     try:
-        user = User.query.filter(user_filter).filter(search_filter).first()
-        image = user.photo
-
-        # cache image on redis
-        if current_app.config.get('AVATAR_CACHE', True):
-            redis_store.setex(mail_addr, image, img_ttl)
-
-        return Image.open(StringIO(image))
+        user = User.query.get(user_dn)
+        return user.photo
     except (IndexError, AttributeError, TypeError):
         return None
 
@@ -104,14 +96,24 @@ def get_avatar(md5):
     image = None
 
     # fetch image from redis or ldap
-    if redis_store.get(md5):
-        mail_addr = redis_store.get(md5)
-        if redis_store.get(mail_addr):
-            image = _get_image_from_redis(mail_addr)
+    if redis_store.exists(md5):
+        user_dn = redis_store.get(md5)
+        dn_sha1hex = hashlib.sha1(user_dn).hexdigest()
+
+        if redis_store.exists(dn_sha1hex):
+            image = _get_image_from_redis(dn_sha1hex)
         else:
-            image = _get_image_from_ldap(mail_addr)
+            image = _get_image_from_ldap(user_dn, dn_sha1hex)
+
+            # cache image on redis
+            if current_app.config.get('AVATAR_CACHE', True):
+                img_ttl = current_app.config['AVATAR_TTL']
+                redis_store.hset(dn_sha1hex, 'raw', image)
+                redis_store.expire(dn_sha1hex, img_ttl)
+
+            image = Image.open(StringIO(image))
     else:
-        current_app.logger.debug('MD5 {0} not in redis.'.format(md5))
+        current_app.logger.warning('MD5 {0} not in redis.'.format(md5))
 
     # default image
     if image is None:

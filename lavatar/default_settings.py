@@ -25,14 +25,14 @@ LDAP_USER_ATTR_PHOTO = 'jpegPhoto'
 # E-Mail MD5 Database Settings
 # ============================
 
-MD5DB_ENTRY_TTL = 36000  # seconds
-MD5DB_THREAD_TIMER = 60  # update frequency in minutes
+MD5DB_ENTRY_TTL = 7200  # in seconds, defaults to 2 hours
+MD5DB_THREAD_TIMER = 60  # update frequency in minutes, defaults to 1 hour
 
 # Avatar settings
 # ===============
 
 # Redis Cache
-AVATAR_TTL = 3600  # seconds
+AVATAR_TTL = 21600  # in seconds, defaults to 6 hours
 
 # Image
 AVATAR_STATIC_IMAGES = {'mm': 'no_avatar.jpg'}  # map images from static/img

@@ -34,7 +34,7 @@ LDAP_USER_ATTR_PHOTO = os.environ.get('LDAP_USER_ATTR_PHOTO', 'jpegPhoto')
 # E-Mail MD5 Database Settings
 # ============================
 
-MD5DB_ENTRY_TTL = int(os.environ.get('MD5DB_ENTRY_TTL', 36000))
+MD5DB_ENTRY_TTL = int(os.environ.get('MD5DB_ENTRY_TTL', 7200))
 MD5DB_THREAD_TIMER = int(os.environ.get('MD5DB_THREAD_TIMER', 60))
 
 
@@ -42,7 +42,7 @@ MD5DB_THREAD_TIMER = int(os.environ.get('MD5DB_THREAD_TIMER', 60))
 # ===============
 
 # Redis
-AVATAR_TTL = int(os.environ.get('AVATAR_TTL', 3600))
+AVATAR_TTL = int(os.environ.get('AVATAR_TTL', 21600))
 
 # Image
 AVATAR_STATIC = os.path.join(BASEDIR, 'app', 'static', 'img')
