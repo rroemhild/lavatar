@@ -26,7 +26,7 @@ LDAP_USER_ATTR_PHOTO = 'jpegPhoto'
 # ============================
 
 MD5DB_ENTRY_TTL = 7200  # in seconds, defaults to 2 hours
-MD5DB_THREAD_TIMER = 60  # update frequency in minutes, defaults to 1 hour
+MD5DB_THREAD_TIMER = 3600  # update frequency in seconds, defaults to 1 hour
 
 # Avatar settings
 # ===============

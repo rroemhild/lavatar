@@ -64,9 +64,9 @@ update_md5db_thread()
 # db update thread
 md5dbThread = threading.Thread()
 md5dbThread = threading.Timer(app.config['MD5DB_THREAD_TIMER'],
-                              update_md5db_thread, ())
+                              update_md5db_thread)
 md5dbThread.start()
-atexit.register(md5dbThread.cancel())
+atexit.register(md5dbThread.cancel)
 
 # Avatar Module
 from lavatar.avatar import mod as avatarModule

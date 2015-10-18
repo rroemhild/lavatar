@@ -1,6 +1,7 @@
 lavatar:
   # build: .
   image: rroemhild/lavatar
+  # entrypoint: ["/env/bin/python", "/app/run.py"]
   links:
     - redis
     - openldap
@@ -8,11 +9,14 @@ lavatar:
     - 5000:5000
   environment:
     - DEBUG=True
+    - MD5DB_THREAD_TIMER=120
     - USE_REDIS=True
     - LDAP_SERVER=openldap
     - LDAP_BINDDN=cn=admin,dc=planetexpress,dc=com
     - LDAP_SECRET=GoodNewsEveryone
     - LDAP_USER_BASEDN=ou=people,dc=planetexpress,dc=com
+#  volumes:
+#    - ./:/app
 redis:
   image: redis
 openldap:
