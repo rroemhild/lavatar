@@ -35,7 +35,7 @@ LDAP_USER_ATTR_PHOTO = os.environ.get('LDAP_USER_ATTR_PHOTO', 'jpegPhoto')
 # ============================
 
 MD5DB_ENTRY_TTL = int(os.environ.get('MD5DB_ENTRY_TTL', 7200))
-MD5DB_THREAD_TIMER = int(os.environ.get('MD5DB_THREAD_TIMER', 60))
+MD5DB_THREAD_TIMER = int(os.environ.get('MD5DB_THREAD_TIMER', 3600))
 
 
 # Avatar settings

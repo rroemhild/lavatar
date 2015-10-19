@@ -6,6 +6,7 @@ sys.setdefaultencoding('utf-8')
 
 import atexit
 import hashlib
+import logging
 import threading
 
 from flask import Flask
@@ -16,6 +17,10 @@ from flask_ldapconn import LDAPConn
 app = Flask('lavatar')
 app.config.from_object('lavatar.default_settings')
 app.config.from_envvar('LAVATAR_SETTINGS', silent=True)
+
+if not app.debug:
+    app.logger.addHandler(logging.StreamHandler())
+    app.logger.setLevel(logging.INFO)
 
 redis_store = Redis(app)
 ldap_conn = LDAPConn(app)
@@ -32,6 +37,7 @@ class User(ldap_conn.Entry):
 
 # md5sum thread
 def update_md5db_thread():
+    app.logger.info('Update MD5 Database.')
     search_filter = app.config.get('LDAP_USER_SEARCHFILTER', '')
 
     with app.app_context():
@@ -54,19 +60,15 @@ def update_md5db_thread():
                         app.config['MD5DB_ENTRY_TTL']
                     )
 
-        app.logger.info('MD5db updated with %s entries from LDAP.',
+        app.logger.info('Found %s people entries in LDAP - updated Redis.',
                         len(users))
 
+    threading.Timer(app.config['MD5DB_THREAD_TIMER'],
+                    update_md5db_thread).start()
 
-# init db on startup
+
+# init db updater
 update_md5db_thread()
-
-# db update thread
-md5dbThread = threading.Thread()
-md5dbThread = threading.Timer(app.config['MD5DB_THREAD_TIMER'],
-                              update_md5db_thread)
-md5dbThread.start()
-atexit.register(md5dbThread.cancel)
 
 # Avatar Module
 from lavatar.avatar import mod as avatarModule

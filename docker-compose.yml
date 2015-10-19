@@ -10,7 +10,6 @@ lavatar:
   environment:
     - DEBUG=True
     - MD5DB_THREAD_TIMER=120
-    - USE_REDIS=True
     - LDAP_SERVER=openldap
     - LDAP_BINDDN=cn=admin,dc=planetexpress,dc=com
     - LDAP_SECRET=GoodNewsEveryone

@@ -14,7 +14,6 @@ if 'LAVATAR_SETTINGS' not in os.environ:
 
 from lavatar import app
 
-
 host = os.environ.get('APP_HOST', '127.0.0.1')
 port = os.environ.get('APP_PORT', 5000)
 
