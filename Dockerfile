@@ -1,4 +1,4 @@
-FROM google/python
+FROM rroemhild/python:2.7
 
 ENV APP_HOST 0.0.0.0
 ENV LAVATAR_SETTINGS /app/docker_settings.py

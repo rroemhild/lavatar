@@ -108,7 +108,7 @@ def get_avatar(md5):
             # cache image on redis
             if current_app.config.get('AVATAR_CACHE', True):
                 img_ttl = current_app.config['AVATAR_TTL']
-                redis_store.hset(dn_sha1hex, 'raw', image)
+                redis_store.hset(dn_sha1hex, 'raw', str(image))
                 redis_store.expire(dn_sha1hex, img_ttl)
 
             image = Image.open(StringIO(image))

@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
-import atexit
 import hashlib
 import logging
 import threading
 
 from flask import Flask
-from flask_redis import Redis
+from flask_redis import FlaskRedis
 from flask_ldapconn import LDAPConn
 
 
@@ -22,7 +17,7 @@ if not app.debug:
     app.logger.addHandler(logging.StreamHandler())
     app.logger.setLevel(logging.INFO)
 
-redis_store = Redis(app)
+redis_store = FlaskRedis(app)
 ldap_conn = LDAPConn(app)
 
 
@@ -47,18 +42,13 @@ def update_md5db_thread():
 
         for user in users:
             for mailaddr in user.mail:
+                ttl = int(app.config['MD5DB_ENTRY_TTL'])
                 mail_md5 = hashlib.md5(mailaddr).hexdigest()
                 if not redis_store.exists(mail_md5):
-                    redis_store.setex(
-                        mail_md5,
-                        user.dn,
-                        app.config['MD5DB_ENTRY_TTL']
-                    )
+                    redis_store.set(mail_md5, user.dn)
+                    redis_store.expire(mail_md5, ttl)
                 else:
-                    redis_store.expire(
-                        mail_md5,
-                        app.config['MD5DB_ENTRY_TTL']
-                    )
+                    redis_store.expire(mail_md5, ttl)
 
         app.logger.info('Found %s people entries in LDAP - updated Redis.',
                         len(users))

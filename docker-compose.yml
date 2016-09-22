@@ -1,7 +1,5 @@
 lavatar:
-  # build: .
   image: rroemhild/lavatar
-  # entrypoint: ["/env/bin/python", "/app/run.py"]
   links:
     - redis
     - openldap
@@ -14,9 +12,9 @@ lavatar:
     - LDAP_BINDDN=cn=admin,dc=planetexpress,dc=com
     - LDAP_SECRET=GoodNewsEveryone
     - LDAP_USER_BASEDN=ou=people,dc=planetexpress,dc=com
-#  volumes:
-#    - ./:/app
+
 redis:
   image: redis
+
 openldap:
   image: rroemhild/test-openldap
