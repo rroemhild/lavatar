@@ -46,8 +46,20 @@ Set ``s`` or ``size`` to scale the avatar image
 
     http://localhost:5000/avatar/HASH?s=160
 
-Use ``d`` or ``default`` for the default image available in ``static/img``.
+Set ``d`` or ``default`` for the default image available in ``static/img``.
 
 .. code-block:: shell
 
     http://localhost:5000/avatar/HASH?d=keyword
+
+Set ``m`` or ``method`` to resize Image with the specified method: 'crop', 'cover', 'contain', 'width', 'height' or 'thumbnail'. Default is ``thumbnail``
+
+.. code-block:: shell
+
+    http://localhost:5000/avatar/HASH?s=120&m=cover
+
+Set ``w`` or ``width`` to resize width and ``h`` or ``height`` to resize height.
+
+.. code-block:: shell
+
+    http://localhost:5000/avatar/HASH?h=120&m=height
