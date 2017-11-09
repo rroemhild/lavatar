@@ -125,9 +125,10 @@ def get_avatar(md5):
 
     try:
         resized_image = resizeimage.resize(resize_method, image, size)
+        resized_image.save(buffer_image, 'JPEG', quality=90)
+        buffer_image.seek(0)
     except resizeimage.ImageSizeError:
         resized_image = image
-    finally:
         resized_image.save(buffer_image, 'JPEG', quality=90)
         buffer_image.seek(0)
 
