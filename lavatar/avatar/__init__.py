@@ -7,9 +7,15 @@ from StringIO import StringIO
 from flask import Blueprint, current_app, send_file, request, abort, url_for
 
 from PIL import Image
+from resizeimage import resizeimage
+
 from lavatar import redis_store, User
 
 mod = Blueprint('avatar', __name__, url_prefix='/avatar')
+
+
+RESIZE_METHODS = ['crop', 'cover', 'contain', 'width', 'height',
+                  'thumbnail']
 
 
 def _get_image_from_redis(dn_sha1hex, size='raw'):
@@ -38,57 +44,18 @@ def _get_argval_from_request(match_args, default):
     return retval
 
 
-def resize_and_crop(img, size):
-    """Resize and crop an image to fit the specified size.
+def _max_size(size):
+    max_size = int(current_app.config['AVATAR_MAX_SIZE'])
+    default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
 
-    Slightly modified version from https://gist.github.com/sigilioso/2957026
+    try:
+        size = int(size)
+        if size > max_size:
+            size = max_size
+    except ValueError:
+        size = default_size
 
-    args:
-        img_path: image object.
-        size: `(width, height)` tuple.
-    raises:
-        Exception: if can not open the file in img_path of there is problems
-            to save the image.
-        ValueError: if an invalid `crop_type` is provided.
-    """
-    crop_type = current_app.config.get('AVATAR_CROP_TYPE', 'top')
-    # Get current and desired ratio for the images
-    img_ratio = img.size[0] / float(img.size[1])
-    ratio = size[0] / float(size[1])
-    # The image is scaled/cropped vertically or horizontally depending on
-    # the ratio
-    if ratio > img_ratio:
-        img = img.resize((size[0], size[0] * img.size[1] / img.size[0]),
-                         Image.ANTIALIAS)
-        # Crop in the top, middle or bottom
-        if crop_type == 'top':
-            box = (0, 0, img.size[0], size[1])
-        elif crop_type == 'middle':
-            box = (0, (img.size[1] - size[1]) / 2, img.size[0],
-                   (img.size[1] + size[1]) / 2)
-        elif crop_type == 'bottom':
-            box = (0, img.size[1] - size[1], img.size[0], img.size[1])
-        else:
-            raise ValueError('ERROR: invalid value for crop_type')
-        img = img.crop(box)
-    elif ratio < img_ratio:
-        img = img.resize((size[1] * img.size[0] / img.size[1], size[1]),
-                         Image.ANTIALIAS)
-        # Crop in the top, middle or bottom
-        if crop_type == 'top':
-            box = (0, 0, size[0], img.size[1])
-        elif crop_type == 'middle':
-            box = ((img.size[0] - size[0]) / 2, 0, (img.size[0] + size[0]) / 2,
-                   img.size[1])
-        elif crop_type == 'bottom':
-            box = (img.size[0] - size[0], 0, img.size[0], img.size[1])
-        else:
-            raise ValueError('ERROR: invalid value for crop_type')
-        img = img.crop(box)
-    else:
-        img = img.resize((size[0], size[1]), Image.ANTIALIAS)
-        # If the scale is the same, we do not need to crop
-    return img
+    return size
 
 
 @mod.route('/<md5>', methods=['GET'])
@@ -130,21 +97,38 @@ def get_avatar(md5):
                     filename=os.path.join('img', static_images[keyword]))
         )
 
-    # size
-    size_args = ['s', 'size']
-    max_size = current_app.config['AVATAR_MAX_SIZE']
+    # sizes
     default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
+    size = _get_argval_from_request(['s', 'size'], default_size)
+    width = _get_argval_from_request(['w', 'width'], default_size)
+    height = _get_argval_from_request(['h', 'height'], default_size)
 
-    try:
-        size = int(_get_argval_from_request(size_args, default_size))
-        if size > max_size:
-            size = max_size
-    except ValueError:
-        size = default_size
+    # resize methods
+    default_method = current_app.config['AVATAR_DEFAULT_METHOD']
+    resize_method = _get_argval_from_request(['m', 'method'], default_method)
+    if resize_method not in RESIZE_METHODS:
+        resize_method = default_method
+
+    if width == default_size and size != default_size:
+        width = size
+    if height == default_size and size != default_size:
+        height = size
+
+    if resize_method in ['crop', 'cover', 'contain', 'thumbnail']:
+        size = (_max_size(width), _max_size(height))
+    elif resize_method == 'width':
+        size = _max_size(width)
+    elif resize_method == 'height':
+        size = _max_size(height)
 
     buffer_image = StringIO()
-    resized_image = resize_and_crop(image, (size, size))
-    resized_image.save(buffer_image, 'JPEG', quality=90)
-    buffer_image.seek(0)
+
+    try:
+        resized_image = resizeimage.resize(resize_method, image, size)
+    except resizeimage.ImageSizeError:
+        resized_image = image
+    finally:
+        resized_image.save(buffer_image, 'JPEG', quality=90)
+        buffer_image.seek(0)
 
     return send_file(buffer_image, mimetype='image/jpeg')

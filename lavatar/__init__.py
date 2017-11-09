@@ -4,6 +4,7 @@ import hashlib
 import logging
 import threading
 
+from six import text_type
 from flask import Flask
 from flask_redis import FlaskRedis
 from flask_ldapconn import LDAPConn
@@ -41,9 +42,13 @@ def update_md5db_thread():
         ).filter(search_filter).all()
 
         for user in users:
-            for mailaddr in user.mail:
+            mailaddresses = user.mail
+            if isinstance(mailaddresses, text_type):
+                mailaddresses = [mailaddresses]
+
+            for mailaddr in mailaddresses:
                 ttl = int(app.config['MD5DB_ENTRY_TTL'])
-                mail_md5 = hashlib.md5(mailaddr).hexdigest()
+                mail_md5 = hashlib.md5(mailaddr.encode('utf-8')).hexdigest()
                 if not redis_store.exists(mail_md5):
                     redis_store.set(mail_md5, user.dn)
                     redis_store.expire(mail_md5, ttl)

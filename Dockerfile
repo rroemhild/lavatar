@@ -1,7 +1,6 @@
-FROM rroemhild/python:2.7
+FROM python:2.7-slim-stretch
 
 ENV APP_HOST 0.0.0.0
-ENV LAVATAR_SETTINGS /app/docker_settings.py
 
 # Install packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,16 +9,17 @@ RUN apt-get -qq update \
 
 WORKDIR /app
 
-RUN virtualenv /env
 ADD requirements.txt /app/requirements.txt
-RUN /env/bin/pip install -r requirements.txt
-RUN /env/bin/pip install gevent
+RUN pip install -r requirements.txt
+RUN pip install gevent
 
 ADD . /app
 
 RUN ln -sf /app/lavatar/static /static
 
+USER nobody
+
 EXPOSE 5000
 
 CMD []
-ENTRYPOINT ["/env/bin/python", "/app/production.py"]
+ENTRYPOINT ["python", "/app/production.py"]
