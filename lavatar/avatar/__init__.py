@@ -2,6 +2,7 @@
 
 import os
 import hashlib
+import mimetypes
 
 from StringIO import StringIO
 from flask import Blueprint, current_app, send_file, request, abort, url_for
@@ -125,11 +126,13 @@ def get_avatar(md5):
 
     try:
         resized_image = resizeimage.resize(resize_method, image, size)
-        resized_image.save(buffer_image, 'JPEG', quality=90)
+        resized_image.save(buffer_image, image.format, quality=95)
         buffer_image.seek(0)
     except resizeimage.ImageSizeError:
         resized_image = image
-        resized_image.save(buffer_image, 'JPEG', quality=90)
+        resized_image.save(buffer_image, image.format, quality=95)
         buffer_image.seek(0)
 
-    return send_file(buffer_image, mimetype='image/jpeg')
+    mimetypes.init()
+    mimetype = mimetypes.types_map['.' + image.format.lower()]
+    return send_file(buffer_image, mimetype=mimetype)

@@ -26,7 +26,7 @@ LDAP_REQUIRE_CERT = CERT_NONE
 LDAP_USER_BASEDN = os.environ.get('LDAP_USER_BASEDN',
                                   'ou=people,dc=example,dc=com')
 LDAP_USER_OBJECTCLASS = os.environ.get('LDAP_USER_OBJECTCLASS',
-                                      'inetOrgPerson')
+                                       'inetOrgPerson')
 LDAP_USER_SEARCHFILTER = os.environ.get('LDAP_USER_SEARCHFILTER', '')
 LDAP_USER_ATTR_MAIL = os.environ.get('LDAP_USER_ATTR_MAIL', 'mail')
 LDAP_USER_ATTR_PHOTO = os.environ.get('LDAP_USER_ATTR_PHOTO', 'jpegPhoto')
