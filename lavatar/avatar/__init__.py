@@ -126,12 +126,16 @@ def get_avatar(md5):
 
     try:
         resized_image = resizeimage.resize(resize_method, image, size)
-        resized_image.save(buffer_image, image.format, quality=95)
-        buffer_image.seek(0)
     except resizeimage.ImageSizeError:
-        resized_image = image
-        resized_image.save(buffer_image, image.format, quality=95)
-        buffer_image.seek(0)
+        if resize_method in ['width', 'height']:
+            resized_image = image
+        else:
+            size = image.height if image.height > image.width else image.width
+            size = (size, size)
+            resized_image = resizeimage.resize(resize_method, image, size)
+
+    resized_image.save(buffer_image, image.format, quality=95)
+    buffer_image.seek(0)
 
     mimetypes.init()
     mimetype = mimetypes.types_map['.' + image.format.lower()]
