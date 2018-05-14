@@ -53,6 +53,10 @@ def update_md5db_thread():
                     redis_store.set(mail_md5, user.dn)
                     redis_store.expire(mail_md5, ttl)
                 else:
+                    if redis_store.get(mail_md5) != user.dn:
+                        # update user DN if changed
+                        redis_store.set(mail_md5, user.dn)
+                    # update ttl
                     redis_store.expire(mail_md5, ttl)
 
         app.logger.info('Found %s people entries in LDAP - updated Redis.',
