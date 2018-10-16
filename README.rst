@@ -63,3 +63,7 @@ Set ``w`` or ``width`` to resize width and ``h`` or ``height`` to resize height.
 .. code-block:: shell
 
     http://localhost:5000/avatar/HASH?h=120&m=height
+
+Set ``r=1`` to ignore the redis cache, fetch the image from ldap and re-cache on redis.
+
+    http://localhost:5000/avatar/HASH?r=1

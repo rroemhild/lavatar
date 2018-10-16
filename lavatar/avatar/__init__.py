@@ -32,13 +32,13 @@ def _get_image_from_ldap(user_dn, dn_sha1hex):
         return None
 
 
-def _get_argval_from_request(match_args, default):
+def _get_argval_from_request(match_args, default, type):
     match_args = set(match_args)
     request_args = set(request.args)
 
     try:
         arg = match_args.intersection(request_args).pop()
-        retval = request.args.get(arg, default)
+        retval = request.args.get(arg, default, type)
     except KeyError:
         retval = default
 
@@ -46,8 +46,8 @@ def _get_argval_from_request(match_args, default):
 
 
 def _max_size(size):
-    max_size = int(current_app.config['AVATAR_MAX_SIZE'])
-    default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
+    max_size = current_app.config['AVATAR_MAX_SIZE']
+    default_size = current_app.config['AVATAR_DEFAULT_SIZE']
 
     try:
         size = int(size)
@@ -63,19 +63,26 @@ def _max_size(size):
 def get_avatar(md5):
     image = None
 
+    recache = bool(_get_argval_from_request(['r', 'recache'], 0, int))
+
     # fetch image from redis or ldap
     if redis_store.exists(md5):
         user_dn = redis_store.get(md5)
         dn_sha1hex = hashlib.sha1(user_dn).hexdigest()
 
-        if redis_store.exists(dn_sha1hex):
+        if redis_store.exists(dn_sha1hex) and recache is False:
+            current_app.logger.debug('Get image from redis')
             image = _get_image_from_redis(dn_sha1hex)
         else:
+            current_app.logger.debug('Get image from ldap')
             image = _get_image_from_ldap(user_dn, dn_sha1hex)
 
             # cache image on redis
             if current_app.config.get('AVATAR_CACHE', True):
                 img_ttl = current_app.config['AVATAR_TTL']
+                current_app.logger.debug(
+                    'Cache image on redis for {} seconds'.format(img_ttl)
+                )
                 redis_store.hset(dn_sha1hex, 'raw', str(image))
                 redis_store.expire(dn_sha1hex, img_ttl)
 
@@ -85,9 +92,11 @@ def get_avatar(md5):
 
     # default image
     if image is None:
-        default_args = ['d', 'default']
+        current_app.logger.debug('Get default image')
         default_image = current_app.config['AVATAR_DEFAULT_IMAGE']
-        keyword = _get_argval_from_request(default_args, default_image)
+        keyword = _get_argval_from_request(
+            ['d', 'default'], default_image, str
+        )
         static_images = current_app.config['AVATAR_STATIC_IMAGES']
 
         if keyword not in static_images or keyword == '404':
@@ -99,14 +108,16 @@ def get_avatar(md5):
         )
 
     # sizes
-    default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
-    size = _get_argval_from_request(['s', 'size'], default_size)
-    width = _get_argval_from_request(['w', 'width'], default_size)
-    height = _get_argval_from_request(['h', 'height'], default_size)
+    default_size = current_app.config['AVATAR_DEFAULT_SIZE']
+    size = _get_argval_from_request(['s', 'size'], default_size, int)
+    width = _get_argval_from_request(['w', 'width'], default_size, int)
+    height = _get_argval_from_request(['h', 'height'], default_size, int)
 
     # resize methods
     default_method = current_app.config['AVATAR_DEFAULT_METHOD']
-    resize_method = _get_argval_from_request(['m', 'method'], default_method)
+    resize_method = _get_argval_from_request(
+        ['m', 'method'], default_method, str
+    )
     if resize_method not in RESIZE_METHODS:
         resize_method = default_method
 
