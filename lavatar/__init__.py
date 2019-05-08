@@ -23,12 +23,12 @@ ldap_conn = LDAPConn(app)
 
 
 class User(ldap_conn.Entry):
-
     base_dn = app.config['LDAP_USER_BASEDN']
     object_class = app.config['LDAP_USER_OBJECTCLASS']
-
     mail = ldap_conn.Attribute(app.config['LDAP_USER_ATTR_MAIL'])
     photo = ldap_conn.Attribute(app.config['LDAP_USER_ATTR_PHOTO'])
+    alias = ldap_conn.Attribute(app.config["LDAP_USER_ATTR_ALIAS"])
+    mailAlternateAddress = ldap_conn.Attribute(app.config["LDAP_USER_ATTR_MAILALTERNATES"])
 
 
 # md5sum thread
@@ -40,11 +40,23 @@ def update_md5db_thread():
         users = User.query.filter(
             'mail: *, photo: *'
         ).filter(search_filter).all()
-
         for user in users:
             mailaddresses = user.mail
+            aliases = user.alias
+            mailAlternates = user.mailAlternateAddress
+            if aliases == None: aliases = []
+            if mailAlternates == None: mailAlternates = []
+
             if isinstance(mailaddresses, text_type):
                 mailaddresses = [mailaddresses]
+
+            if isinstance(aliases, text_type):
+                aliases = [aliases]
+
+            if isinstance(mailAlternates, text_type):
+                mailAlternates = [mailAlternates]
+
+            mailaddresses = mailaddresses + aliases + mailAlternates
 
             for mailaddr in mailaddresses:
                 ttl = int(app.config['MD5DB_ENTRY_TTL'])
