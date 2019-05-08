@@ -89,13 +89,13 @@ def get_avatar(md5):
         default_image = current_app.config['AVATAR_DEFAULT_IMAGE']
         keyword = _get_argval_from_request(default_args, default_image)
         static_images = current_app.config['AVATAR_STATIC_IMAGES']
+        static_path = current_app.config['AVATAR_STATIC']
 
         if keyword not in static_images or keyword == '404':
             abort(404)
 
         image = Image.open(
-            url_for('static',
-                    filename=os.path.join('img', static_images[keyword]))
+            os.path.join(static_path, static_images[keyword])
         )
 
     # sizes
