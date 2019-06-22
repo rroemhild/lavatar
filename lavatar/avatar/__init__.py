@@ -69,18 +69,21 @@ def get_avatar(md5):
         user_dn = redis_store.get(md5)
         dn_sha1hex = hashlib.sha1(user_dn).hexdigest()
 
-        if redis_store.exists(dn_sha1hex):
-            image = _get_image_from_redis(dn_sha1hex)
-        else:
-            image = _get_image_from_ldap(user_dn.decode(), dn_sha1hex)
+        try:
+            if redis_store.exists(dn_sha1hex):
+                image = _get_image_from_redis(dn_sha1hex)
+            else:
+                image = _get_image_from_ldap(user_dn.decode(), dn_sha1hex)
 
-            # cache image on redis
-            if current_app.config.get('AVATAR_CACHE', True):
-                img_ttl = current_app.config['AVATAR_TTL']
-                redis_store.hset(dn_sha1hex, 'raw', image)
-                redis_store.expire(dn_sha1hex, img_ttl)
+                # cache image on redis
+                if current_app.config.get('AVATAR_CACHE', True):
+                    img_ttl = current_app.config['AVATAR_TTL']
+                    redis_store.hset(dn_sha1hex, 'raw', image)
+                    redis_store.expire(dn_sha1hex, img_ttl)
 
-            image = Image.open(BytesIO(image))
+                image = Image.open(BytesIO(image))
+        except OSError:
+            current_app.logger.warning('Cannot read image of {0}'.format(user_dn))
     else:
         current_app.logger.warning('MD5 {0} not in redis.'.format(md5))
 
