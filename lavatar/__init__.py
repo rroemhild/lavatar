@@ -25,10 +25,12 @@ ldap_conn = LDAPConn(app)
 class User(ldap_conn.Entry):
     base_dn = app.config['LDAP_USER_BASEDN']
     object_class = app.config['LDAP_USER_OBJECTCLASS']
-    mail = ldap_conn.Attribute(app.config['LDAP_USER_ATTR_MAIL'])
+    if isinstance(app.config['LDAP_USER_ATTR_MAIL'], str):
+        app.config['LDAP_USER_ATTR_MAIL'] = [ app.config['LDAP_USER_ATTR_MAIL'] ]
+    mail = ldap_conn.Attribute(app.config['LDAP_USER_ATTR_MAIL'][0])
+    for i,attr in enumerate(app.config['LDAP_USER_ATTR_MAIL'][1:]):
+        exec("mail" + str(i) + "=ldap_conn.Attribute('" + attr + "')")
     photo = ldap_conn.Attribute(app.config['LDAP_USER_ATTR_PHOTO'])
-    alias = ldap_conn.Attribute(app.config["LDAP_USER_ATTR_ALIAS"])
-    mailAlternateAddress = ldap_conn.Attribute(app.config["LDAP_USER_ATTR_MAILALTERNATES"])
 
 
 # md5sum thread
@@ -42,21 +44,15 @@ def update_md5db_thread():
         ).filter(search_filter).all()
         for user in users:
             mailaddresses = user.mail
-            aliases = user.alias
-            mailAlternates = user.mailAlternateAddress
-            if aliases == None: aliases = []
-            if mailAlternates == None: mailAlternates = []
-
             if isinstance(mailaddresses, text_type):
                 mailaddresses = [mailaddresses]
 
-            if isinstance(aliases, text_type):
-                aliases = [aliases]
-
-            if isinstance(mailAlternates, text_type):
-                mailAlternates = [mailAlternates]
-
-            mailaddresses = mailaddresses + aliases + mailAlternates
+            for i in range(len(app.config['LDAP_USER_ATTR_MAIL']) - 1):
+                mailAlternates = getattr(user, "mail" + str(i))
+                if mailAlternates == None: mailAlternates = []
+                if isinstance(mailAlternates, text_type):
+                    mailAlternates = [mailAlternates]
+                mailaddresses = mailaddresses + mailAlternates
 
             for mailaddr in mailaddresses:
                 ttl = int(app.config['MD5DB_ENTRY_TTL'])

@@ -29,8 +29,7 @@ LDAP_USER_OBJECTCLASS = os.environ.get('LDAP_USER_OBJECTCLASS',
                                        'inetOrgPerson')
 LDAP_USER_SEARCHFILTER = os.environ.get('LDAP_USER_SEARCHFILTER', '')
 LDAP_USER_ATTR_MAIL = os.environ.get('LDAP_USER_ATTR_MAIL', 'mail')
-LDAP_USER_ATTR_ALIAS = os.environ.get('LDAP_USER_ATTR_ALIAS', 'alias')
-LDAP_USER_ATTR_MAILALTERNATES = os.environ.get('LDAP_USER_ATTR_MAILALTERNATES', 'mailAlternateAddress')
+#LDAP_USER_ATTR_MAIL = os.environ.get('LDAP_USER_ATTR_MAIL', ['mail', 'alias', 'mailAlternateAddress'])
 LDAP_USER_ATTR_PHOTO = os.environ.get('LDAP_USER_ATTR_PHOTO', 'jpegPhoto')
 
 # E-Mail MD5 Database Settings
