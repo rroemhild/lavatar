@@ -4,7 +4,7 @@ import os
 import hashlib
 import mimetypes
 
-from StringIO import StringIO
+from io import BytesIO
 from flask import Blueprint, current_app, send_file, request, abort, url_for
 
 from PIL import Image
@@ -22,7 +22,7 @@ RESIZE_METHODS = ['crop', 'cover', 'contain', 'width', 'height',
 
 def _get_image_from_redis(dn_sha1hex, size='raw'):
     image = redis_store.hget(dn_sha1hex, size)
-    return Image.open(StringIO(image))
+    return Image.open(BytesIO(image))
 
 
 def _get_image_from_ldap(user_dn, dn_sha1hex):
@@ -72,15 +72,15 @@ def get_avatar(md5):
         if redis_store.exists(dn_sha1hex):
             image = _get_image_from_redis(dn_sha1hex)
         else:
-            image = _get_image_from_ldap(user_dn, dn_sha1hex)
+            image = _get_image_from_ldap(user_dn.decode(), dn_sha1hex)
 
             # cache image on redis
             if current_app.config.get('AVATAR_CACHE', True):
                 img_ttl = current_app.config['AVATAR_TTL']
-                redis_store.hset(dn_sha1hex, 'raw', str(image))
+                redis_store.hset(dn_sha1hex, 'raw', image)
                 redis_store.expire(dn_sha1hex, img_ttl)
 
-            image = Image.open(StringIO(image))
+            image = Image.open(BytesIO(image))
     else:
         current_app.logger.warning('MD5 {0} not in redis.'.format(md5))
 
@@ -113,10 +113,10 @@ def get_avatar(md5):
                 # cache image on redis
                 if identicon_cache == 'true':
                     img_ttl = current_app.config['AVATAR_TTL']
-                    redis_store.hset(redis_key, 'raw', str(image))
+                    redis_store.hset(redis_key, 'raw', image)
                     redis_store.expire(redis_key, img_ttl)
 
-                image = Image.open(StringIO(image))
+                image = Image.open(BytesIO(image))
 
         elif keyword not in static_images or keyword == '404':
             abort(404)
@@ -149,7 +149,7 @@ def get_avatar(md5):
     elif resize_method == 'height':
         size = _max_size(height)
 
-    buffer_image = StringIO()
+    buffer_image = BytesIO()
 
     try:
         resized_image = resizeimage.resize(resize_method, image, size)
