@@ -9,6 +9,7 @@ from flask import Blueprint, current_app, send_file, request, abort, url_for
 
 from PIL import Image
 from resizeimage import resizeimage
+from pydenticon import Generator
 
 from lavatar import redis_store, User
 
@@ -90,13 +91,39 @@ def get_avatar(md5):
         keyword = _get_argval_from_request(default_args, default_image)
         static_images = current_app.config['AVATAR_STATIC_IMAGES']
         static_path = current_app.config['AVATAR_STATIC']
+        identicon_enable = current_app.config['AVATAR_IDENTICON_ENABLE']
+        identicon_cache = current_app.config['AVATAR_IDENTICON_CACHE']
 
-        if keyword not in static_images or keyword == '404':
+        if identicon_enable == 'true' and keyword == 'identicon':
+            redis_key = md5 + "-identicon"
+
+            # fetch image from redis
+            if identicon_cache == 'true' and redis_store.exists(redis_key):
+                image = _get_image_from_redis(redis_key)
+            else:
+                generator = Generator(int(current_app.config['AVATAR_IDENTICON_SIZE']),
+                        int(current_app.config['AVATAR_IDENTICON_SIZE']),
+                        foreground=current_app.config['AVATAR_IDENTICON_FOREGROUND'],
+                        background=current_app.config['AVATAR_IDENTICON_BACKGROUND'])
+                image = generator.generate(md5,
+                        int(current_app.config['AVATAR_MAX_SIZE']),
+                        int(current_app.config['AVATAR_MAX_SIZE']),
+                        padding=(0,-4,0,-4))
+
+                # cache image on redis
+                if identicon_cache == 'true':
+                    img_ttl = current_app.config['AVATAR_TTL']
+                    redis_store.hset(redis_key, 'raw', str(image))
+                    redis_store.expire(redis_key, img_ttl)
+
+                image = Image.open(StringIO(image))
+
+        elif keyword not in static_images or keyword == '404':
             abort(404)
-
-        image = Image.open(
-            os.path.join(static_path, static_images[keyword])
-        )
+        else:
+            image = Image.open(
+                os.path.join(static_path, static_images[keyword])
+            )
 
     # sizes
     default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
