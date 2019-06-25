@@ -1,4 +1,4 @@
-FROM python:2.7-slim-stretch
+FROM python:3.7-slim-stretch
 
 ENV APP_HOST 0.0.0.0
 
