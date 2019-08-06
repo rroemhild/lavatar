@@ -46,9 +46,9 @@ MD5DB_THREAD_TIMER = int(os.environ.get('MD5DB_THREAD_TIMER', 3600))
 AVATAR_TTL = int(os.environ.get('AVATAR_TTL', 21600))
 
 # Image
-AVATAR_STATIC = os.path.join(BASEDIR, 'app', 'static', 'img')
+AVATAR_STATIC = os.path.join(BASEDIR, 'static', 'img')
 AVATAR_STATIC_IMAGES = {'mm': 'no_avatar.jpg'}
-AVATAR_DEFAULT_IMAGE = os.environ.get('AVATAR_DEFAULT_IMAGE', 'mm')
+AVATAR_DEFAULT_IMAGE = os.environ.get('AVATAR_DEFAULT_IMAGE', 'no_avatar')
 AVATAR_DEFAULT_SIZE = int(os.environ.get('AVATAR_DEFAULT_SIZE', 80))
 AVATAR_MAX_SIZE = int(os.environ.get('AVATAR_MAX_SIZE', 1024))
 AVATAR_DEFAULT_METHOD = os.environ.get('AVATAR_DEFAULT_METHOD', 'thumbnail')
