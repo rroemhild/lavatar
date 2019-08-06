@@ -13,14 +13,13 @@ from pydenticon import Generator
 
 from lavatar import redis_store, User
 
-mod = Blueprint('avatar', __name__, url_prefix='/avatar')
+mod = Blueprint("avatar", __name__, url_prefix="/avatar")
 
 
-RESIZE_METHODS = ['crop', 'cover', 'contain', 'width', 'height',
-                  'thumbnail']
+RESIZE_METHODS = ["crop", "cover", "contain", "width", "height", "thumbnail"]
 
 
-def _get_image_from_redis(dn_sha1hex, size='raw'):
+def _get_image_from_redis(dn_sha1hex, size="raw"):
     image = redis_store.hget(dn_sha1hex, size)
     return Image.open(BytesIO(image))
 
@@ -47,8 +46,8 @@ def _get_argval_from_request(match_args, default):
 
 
 def _max_size(size):
-    max_size = int(current_app.config['AVATAR_MAX_SIZE'])
-    default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
+    max_size = int(current_app.config["AVATAR_MAX_SIZE"])
+    default_size = int(current_app.config["AVATAR_DEFAULT_SIZE"])
 
     try:
         size = int(size)
@@ -60,7 +59,7 @@ def _max_size(size):
     return size
 
 
-@mod.route('/<md5>', methods=['GET'])
+@mod.route("/<md5>", methods=["GET"])
 def get_avatar(md5):
     image = None
 
@@ -76,67 +75,69 @@ def get_avatar(md5):
                 image = _get_image_from_ldap(user_dn.decode(), dn_sha1hex)
 
                 # cache image on redis
-                if current_app.config.get('AVATAR_CACHE', True):
-                    img_ttl = current_app.config['AVATAR_TTL']
-                    redis_store.hset(dn_sha1hex, 'raw', image)
+                if current_app.config.get("AVATAR_CACHE", True):
+                    img_ttl = current_app.config["AVATAR_TTL"]
+                    redis_store.hset(dn_sha1hex, "raw", image)
                     redis_store.expire(dn_sha1hex, img_ttl)
 
                 image = Image.open(BytesIO(image))
         except OSError:
-            current_app.logger.warning('Cannot read image of {0}'.format(user_dn))
+            current_app.logger.warning("Cannot read image of {0}".format(user_dn))
     else:
-        current_app.logger.warning('MD5 {0} not in redis.'.format(md5))
+        current_app.logger.warning("MD5 {0} not in redis.".format(md5))
 
     # default image
     if image is None:
-        default_args = ['d', 'default']
-        default_image = current_app.config['AVATAR_DEFAULT_IMAGE']
+        default_args = ["d", "default"]
+        default_image = current_app.config["AVATAR_DEFAULT_IMAGE"]
         keyword = _get_argval_from_request(default_args, default_image)
-        static_images = current_app.config['AVATAR_STATIC_IMAGES']
-        static_path = current_app.config['AVATAR_STATIC']
-        identicon_enable = current_app.config['AVATAR_IDENTICON_ENABLE']
-        identicon_cache = current_app.config['AVATAR_IDENTICON_CACHE']
+        static_images = current_app.config["AVATAR_STATIC_IMAGES"]
+        static_path = current_app.config["AVATAR_STATIC"]
+        identicon_enable = current_app.config["AVATAR_IDENTICON_ENABLE"]
+        identicon_cache = current_app.config["AVATAR_IDENTICON_CACHE"]
 
-        if identicon_enable == 'true' and keyword == 'identicon':
+        if identicon_enable == "true" and keyword == "identicon":
             redis_key = md5 + "-identicon"
 
             # fetch image from redis
-            if identicon_cache == 'true' and redis_store.exists(redis_key):
+            if identicon_cache == "true" and redis_store.exists(redis_key):
                 image = _get_image_from_redis(redis_key)
             else:
-                generator = Generator(int(current_app.config['AVATAR_IDENTICON_SIZE']),
-                        int(current_app.config['AVATAR_IDENTICON_SIZE']),
-                        foreground=current_app.config['AVATAR_IDENTICON_FOREGROUND'],
-                        background=current_app.config['AVATAR_IDENTICON_BACKGROUND'])
-                image = generator.generate(md5,
-                        int(current_app.config['AVATAR_MAX_SIZE']),
-                        int(current_app.config['AVATAR_MAX_SIZE']),
-                        padding=(0,-4,0,-4))
+                generator = Generator(
+                    int(current_app.config["AVATAR_IDENTICON_SIZE"]),
+                    int(current_app.config["AVATAR_IDENTICON_SIZE"]),
+                    foreground=current_app.config["AVATAR_IDENTICON_FOREGROUND"],
+                    background=current_app.config["AVATAR_IDENTICON_BACKGROUND"],
+                )
+                image = generator.generate(
+                    md5,
+                    int(current_app.config["AVATAR_MAX_SIZE"]),
+                    int(current_app.config["AVATAR_MAX_SIZE"]),
+                    padding=(0, -4, 0, -4),
+                )
 
                 # cache image on redis
-                if identicon_cache == 'true':
-                    img_ttl = current_app.config['AVATAR_TTL']
-                    redis_store.hset(redis_key, 'raw', image)
+                if identicon_cache == "true":
+                    img_ttl = current_app.config["AVATAR_TTL"]
+                    redis_store.hset(redis_key, "raw", image)
                     redis_store.expire(redis_key, img_ttl)
 
                 image = Image.open(BytesIO(image))
 
-        elif keyword not in static_images or keyword == '404':
+        elif keyword not in static_images or keyword == "404":
             abort(404)
         else:
-            image = Image.open(
-                os.path.join(static_path, static_images[keyword])
-            )
+            image = Image.open(os.path.join(static_path, static_images[keyword]))
 
     # sizes
-    default_size = int(current_app.config['AVATAR_DEFAULT_SIZE'])
-    size = _get_argval_from_request(['s', 'size'], default_size)
-    width = _get_argval_from_request(['w', 'width'], default_size)
-    height = _get_argval_from_request(['h', 'height'], default_size)
+    default_size = int(current_app.config["AVATAR_DEFAULT_SIZE"])
+    size = _get_argval_from_request(["s", "size"], default_size)
+    width = _get_argval_from_request(["w", "width"], default_size)
+    height = _get_argval_from_request(["h", "height"], default_size)
 
     # resize methods
-    default_method = current_app.config['AVATAR_DEFAULT_METHOD']
-    resize_method = _get_argval_from_request(['m', 'method'], default_method)
+    default_method = current_app.config["AVATAR_DEFAULT_METHOD"]
+    resize_method = _get_argval_from_request(["m", "method"], default_method)
     if resize_method not in RESIZE_METHODS:
         resize_method = default_method
 
@@ -145,11 +146,11 @@ def get_avatar(md5):
     if height == default_size and size != default_size:
         height = size
 
-    if resize_method in ['crop', 'cover', 'contain', 'thumbnail']:
+    if resize_method in ["crop", "cover", "contain", "thumbnail"]:
         size = (_max_size(width), _max_size(height))
-    elif resize_method == 'width':
+    elif resize_method == "width":
         size = _max_size(width)
-    elif resize_method == 'height':
+    elif resize_method == "height":
         size = _max_size(height)
 
     buffer_image = BytesIO()
@@ -157,7 +158,7 @@ def get_avatar(md5):
     try:
         resized_image = resizeimage.resize(resize_method, image, size)
     except resizeimage.ImageSizeError:
-        if resize_method in ['width', 'height']:
+        if resize_method in ["width", "height"]:
             resized_image = image
         else:
             size = image.height if image.height > image.width else image.width
@@ -168,5 +169,5 @@ def get_avatar(md5):
     buffer_image.seek(0)
 
     mimetypes.init()
-    mimetype = mimetypes.types_map['.' + image.format.lower()]
+    mimetype = mimetypes.types_map["." + image.format.lower()]
     return send_file(buffer_image, mimetype=mimetype)
