@@ -45,7 +45,7 @@ AVATAR_TTL = int(os.environ.get("AVATAR_TTL", 21600))
 
 # Image
 AVATAR_STATIC = os.path.join(BASEDIR, "static", "img")
-AVATAR_STATIC_IMAGES = {"mm": "no_avatar.jpg"}
+AVATAR_STATIC_IMAGES = {"mm": "no_avatar.jpg", "no_avatar": "no_avatar.jpg"}
 AVATAR_DEFAULT_IMAGE = os.environ.get("AVATAR_DEFAULT_IMAGE", "no_avatar")
 AVATAR_DEFAULT_SIZE = int(os.environ.get("AVATAR_DEFAULT_SIZE", 80))
 AVATAR_MAX_SIZE = int(os.environ.get("AVATAR_MAX_SIZE", 1024))
